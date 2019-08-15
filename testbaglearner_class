@@ -1,0 +1,58 @@
+"""
+Test a learner.  (c) 2015 Tucker Balch
+"""
+
+import numpy as np
+import math
+import RTLearner as rtl
+import LinRegLearner as lrl
+import BagLearner as bl
+import sys
+import matplotlib.pyplot as plt
+
+
+if __name__=="__main__":
+    if len(sys.argv) != 2:
+        print "Usage: python testlearner.py <filename>"
+        sys.exit(1)
+    
+    data = None
+    try:
+        inf = open(sys.argv[1])
+        data = np.array([map(float,s.strip().split(',')) for s in inf.readlines()])
+    except ValueError:
+        inf = open(sys.argv[1])
+        data = np.array([map(float,s.strip().split(',')[1:]) for s in inf.readlines()[1:]])
+
+
+    # compute how much of the data is training and testing
+    train_rows = int(0.6* data.shape[0])
+    test_rows = data.shape[0] - train_rows
+
+    # separate out training and testing data
+    trainX = data[:train_rows,0:-1]
+    trainY = data[:train_rows,-1]
+    testX = data[train_rows:,0:-1]
+    testY = data[train_rows:,-1]
+
+    print "testX.shape =", testX.shape
+    print "testY.shape =", testY.shape
+
+    
+    # create a learner and train it to vary leaf_size
+    leaf_size = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100]
+    ais = np.empty([len(leaf_size),2])
+    aos = np.empty([len(leaf_size),2])
+    count = 0
+    index = -1
+    
+    for i in leaf_size:
+        count = count + 1
+        index = index + 1
+        
+        learner = bl.BagLearner(learner=rtl.RTLearner, kwargs={"leaf_size":i, "verbose":True}, bags=1, boost=False, verbose=True)
+        learner.addEvidence(trainX,trainY)
+        
+        # evaluate in sample
+        predY = learner.query(trainX) # get the predictions
+       
